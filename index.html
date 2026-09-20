@@ -338,7 +338,7 @@
             <section class="min-h-screen flex items-center justify-center py-32 px-4 relative z-10">
                 <div class="max-w-6xl mx-auto text-center perspective-wrapper">
                     <!-- Text to be manipulated by JS -->
-                    <p class="font-serif text-4xl md:text-6xl lg:text-[5rem] leading-[1.1] font-medium text-dark-plum" id="kinetic-quote" style="text-shadow: 0 10px 30px rgba(255,255,255,0.3);">
+                    <p class="font-sans font-light italic text-3xl md:text-5xl lg:text-6xl leading-[1.3] text-dark-plum/90" id="kinetic-quote" style="text-shadow: 0 10px 30px rgba(255,255,255,0.4);">
                         As our paths converge into one beautiful journey, we invite you to witness the beginning of our forever. Join us in celebrating a night filled with love, and the magical start of our happily ever after.
                     </p>
                 </div>
@@ -458,6 +458,12 @@
                     With Love <span class="text-[#FF9A9E] text-2xl drop-shadow-md beating-heart" id="footer-heart">♥</span>
                 </p>
                 <h2 class="font-serif text-6xl md:text-8xl text-dark-plum">Reetu & Souvik</h2>
+                
+                <!-- Live Backend Visitor Counter -->
+                <div class="mt-16 font-sans text-xs tracking-widest text-dark-plum/50 uppercase flex justify-center items-center gap-3">
+                    <span>Page Visits:</span>
+                    <span id="visitor-count" class="font-bold text-dark-plum/80 text-sm">--</span>
+                </div>
             </footer>
 
         </div>
@@ -705,16 +711,16 @@
             // Set Initial states for hero characters (Cinematic Glide Setup)
             gsap.set('.hero-char', { y: 100, scale: 0.9, opacity: 0, filter: 'blur(15px)' });
 
-            tl.to('.preloader-text', { y: 0, duration: 1.2, ease: "power4.out" })
-              .to('.preloader-text', { y: "-100%", duration: 0.8, ease: "power4.in", delay: 0.8 })
-              .to('.preloader', { y: "-100%", duration: 1, ease: "expo.inOut" }, "-=0.4")
-              // Animate Hero Elements fading in
-              .to('.hero-fade', { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power3.out" }, "-=0.5")
+            tl.to('.preloader-text', { y: 0, duration: 0.01 })
+              .to('.preloader-text', { y: "-100%", duration: 0.01 })
+              .to('.preloader', { y: "-100%", duration: 0.01 })
+              // Animate Hero Elements fading in instantly after load
+              .to('.hero-fade', { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power3.out" })
               // Elegant Cinematic Soft-Focus Reveal
               .to('.hero-char', {
                   y: 0, scale: 1, opacity: 1, filter: 'blur(0px)',
                   duration: 2, stagger: 0.08, ease: 'expo.out'
-              }, "-=0.8");
+              }, "-=0.5");
 
             // 3D Kinetic Word Fold-Out for Quote
             gsap.from('.word-3d span', {
@@ -922,6 +928,55 @@
         }
         animateCanvas();
 
+    </script>
+
+    <!-- FIREBASE VISITOR COUNTER BACKEND -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        try {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'wedding-invite';
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            
+            if (firebaseConfig) {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+
+                const authPromise = typeof __initial_auth_token !== 'undefined' 
+                    ? signInWithCustomToken(auth, __initial_auth_token)
+                    : signInAnonymously(auth);
+
+                authPromise.then((userCredential) => {
+                    const user = userCredential.user;
+                    if (!user) return; // Strict auth guard
+
+                    const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'visitors');
+
+                    // Increment only once per session so we don't accidentally spam the counter on refreshes
+                    if (!sessionStorage.getItem('hasVisitedWeddingPage')) {
+                        setDoc(counterRef, { count: increment(1) }, { merge: true }).then(() => {
+                            sessionStorage.setItem('hasVisitedWeddingPage', 'true');
+                        }).catch(e => console.error("Visitor count increment failed:", e));
+                    }
+
+                    // Listen for real-time updates across all users globally
+                    onSnapshot(counterRef, (snapshot) => {
+                        if (snapshot.exists()) {
+                            const countEl = document.getElementById('visitor-count');
+                            if (countEl) countEl.innerText = snapshot.data().count;
+                        }
+                    }, (error) => {
+                        console.error("Firestore Error:", error);
+                    });
+
+                }).catch(e => console.error("Auth Error:", e));
+            }
+        } catch(e) {
+            console.error("Firebase Setup Error:", e);
+        }
     </script>
 </body>
 </html>
