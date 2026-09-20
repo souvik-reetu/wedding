@@ -621,7 +621,7 @@
         // 4. Countdown Timer Logic
         function updateTimer() {
             // FIXED: Using universally supported ISO date format for mobile compatibility
-            const weddingDate = new Date("2026-12-13T18:00:00").getTime();
+            const weddingDate = new Date("2026-12-13T18:00:00+05:30").getTime();
             const now = new Date().getTime();
             const distance = weddingDate - now;
 
