@@ -458,12 +458,6 @@
                     With Love <span class="text-[#FF9A9E] text-2xl drop-shadow-md beating-heart" id="footer-heart">♥</span>
                 </p>
                 <h2 class="font-serif text-6xl md:text-8xl text-dark-plum">Reetu & Souvik</h2>
-                
-                <!-- Live Backend Visitor Counter -->
-                <div class="mt-16 font-sans text-xs tracking-widest text-dark-plum/50 uppercase flex justify-center items-center gap-3">
-                    <span>Page Visits:</span>
-                    <span id="visitor-count" class="font-bold text-dark-plum/80 text-sm">--</span>
-                </div>
             </footer>
 
         </div>
@@ -928,55 +922,6 @@
         }
         animateCanvas();
 
-    </script>
-
-    <!-- FIREBASE VISITOR COUNTER BACKEND -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'wedding-invite';
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            
-            if (firebaseConfig) {
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                const auth = getAuth(app);
-
-                const authPromise = typeof __initial_auth_token !== 'undefined' 
-                    ? signInWithCustomToken(auth, __initial_auth_token)
-                    : signInAnonymously(auth);
-
-                authPromise.then((userCredential) => {
-                    const user = userCredential.user;
-                    if (!user) return; // Strict auth guard
-
-                    const counterRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', 'visitors');
-
-                    // Increment only once per session so we don't accidentally spam the counter on refreshes
-                    if (!sessionStorage.getItem('hasVisitedWeddingPage')) {
-                        setDoc(counterRef, { count: increment(1) }, { merge: true }).then(() => {
-                            sessionStorage.setItem('hasVisitedWeddingPage', 'true');
-                        }).catch(e => console.error("Visitor count increment failed:", e));
-                    }
-
-                    // Listen for real-time updates across all users globally
-                    onSnapshot(counterRef, (snapshot) => {
-                        if (snapshot.exists()) {
-                            const countEl = document.getElementById('visitor-count');
-                            if (countEl) countEl.innerText = snapshot.data().count;
-                        }
-                    }, (error) => {
-                        console.error("Firestore Error:", error);
-                    });
-
-                }).catch(e => console.error("Auth Error:", e));
-            }
-        } catch(e) {
-            console.error("Firebase Setup Error:", e);
-        }
     </script>
 </body>
 </html>
