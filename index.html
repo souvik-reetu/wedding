@@ -882,6 +882,18 @@
             });
         }
 
+        // NEW: Magical Touch Trails for Mobile Devices
+        let lastTouchDraw = 0;
+        window.addEventListener('touchmove', (e) => {
+            const now = Date.now();
+            if(now - lastTouchDraw > 30) { // Slightly throttled to protect mobile frame rates
+                const touch = e.touches[0];
+                trails.push(new StarTrail(touch.clientX, touch.clientY));
+                trails.push(new StarTrail(touch.clientX + (Math.random()-0.5)*10, touch.clientY + (Math.random()-0.5)*10));
+                lastTouchDraw = now;
+            }
+        }, { passive: true });
+
         function animateCanvas() {
             ctx.clearRect(0, 0, width, height);
             
